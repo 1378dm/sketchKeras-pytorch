@@ -26,11 +26,12 @@ def imgFusion(img1, img2, overlap, left_right):
     '''
     # 这里先暂时考虑平行向融合
     w = calWeight(overlap, 0.05)  # k=5 这里是超参
+    # print(w)
 
     if left_right:  # 左右融合
         row1, col1 = img1.shape
         row2, col2 = img2.shape
-        img_new = np.zeros((row1, col1 + col2 - overlap))
+        img_new = np.zeros((row1, col1 + col2 - overlap), dtype = np.float32)
         img_new[0:row1, 0:col1] = img1
         w_expand = np.tile(w, (row1, 1))  # 权重扩增
         img_new[0:row1, (col1 - overlap):col1] = \
@@ -40,7 +41,7 @@ def imgFusion(img1, img2, overlap, left_right):
     else:  # 上下融合
         row1, col1 = img1.shape
         row2, col2 = img2.shape
-        img_new = np.zeros((row1 + row2 - overlap, col1))
+        img_new = np.zeros((row1 + row2 - overlap, col1), dtype = np.float32)
         img_new[0:row1, 0:col1] = img1
         w = np.reshape(w, (overlap, 1))
         w_expand = np.tile(w, (1, col1))
@@ -52,11 +53,22 @@ def imgFusion(img1, img2, overlap, left_right):
 
 
 def main(img1, img2, left_right):
-    img1 = (img1 - img1.min()) / img1.ptp()
-    img2 = (img2 - img2.min()) / img2.ptp()
+    # np.set_printoptions(threshold = np.inf)
+    tmp1 = img1.ptp()
+    if not tmp1 == 0:
+        img1 = (img1 - img1.min()) / tmp1
+    tmp2 = img2.ptp()
+    if not tmp2 == 0:
+        img2 = (img2 - img2.min()) / tmp2
     result = imgFusion(img1, img2, 256, left_right)
     # result = np.uint16(result * 65535)
-    return np.uint8(result * 255)
+    ret_img = np.clip(result, 0.0, 1.0)
+    '''# print(result.dtype)
+    cv2.imshow('img_final', np.uint8(ret_img * 255))
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    #print(result)'''
+    return np.uint8(ret_img * 255)
 
 
 # if __name__ =="__main__":
